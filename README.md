@@ -1,17 +1,18 @@
 # Limitations of code generation & how to overcome them
 
-Unfortunately, generator can not generate code for processing complex properties such as an array of objects. In that case developer has to extend auto generated code by adding handwritten code for processing complex properties. Following text will explain how to write hybrid solution using Web Application Firewall Config as an example.
+Unfortunately, generator can not generate code for processing of complex properties such as an array of objects. In that case developer has to extend auto generated code by adding handwritten code for processing of complex properties. Let's call this hybrid solution i.e. partially generated and partially handwritten. This manual explains how to write hybrid solution using Web Application Firewall Config as an example.
 
-*Please make sure you've read [documentation](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/) (especially [the part about writing cmdlets](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/Writing-Cmd.md)) for `azure-xplat-cli`*
+*Please compete reading of [documentation](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/) (especially [the part about writing cmdlets](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/Writing-Cmd.md)) for `azure-xplat-cli` before continuing*
 
 ## Examining auto generated code
 
-WAF Config's JS code is generated into `ApplicationGateways-webApplicationFirewallConfiguration._js` file. As you look throught it to check if everything generated correctly, you'll see that `create` and `set` commands have an option `disabled-rule-groups`.
+WAF Config's JS code is generated into `ApplicationGateways-webApplicationFirewallConfiguration._js` file. If all the parameters were added directly into generator configuration there would be some incorrect parameters processing code in `create` and `set` commands e.g. option `disabled-rule-groups` assignment.
 
 ```javascript
 .option('--disabled-rule-groups [disabled-rule-groups]', $('the disabled rule groups'))
 // ...
 if (options.disabledRuleGroups) {
+// This line is incorrect, see explanation below
   parameters.webApplicationFirewallConfiguration.disabledRuleGroups = options.disabledRuleGroups;
 }
 ```
@@ -20,9 +21,9 @@ According to [API specifications](https://github.com/Azure/azure-rest-api-specs/
 
 ## Writing hybrid solution
 
-First of all, we need to remove `disabled-rule-groups` option from generated commands (including related logic). WAF config is an object accessible through `applicationGateway` object, so it's going to be easy to add custom objects to `disabledRuleGroups` array. To do that we need to create a new subcategory for `waf-config` that will control disabled rule groups.
+First of all, we need to remove `disabled-rule-groups` option from generated commands (including related logic), this could be done during generation by removing of corresponding parameter from generator configuration. WAF config is an object accessible through `applicationGateway` object, so it's easy to add custom objects to `disabledRuleGroups` array. To do that we need to create a new subcategory of `waf-config` that will control disabled rule groups.
 
-WAF config is a part of `network` service, it's core module code is located in `network._js`. It's not going to be re-generated, so that's where new handwritten commands should be added. In our case, we create new category somewhere in `network._js`.
+WAF config is a part of `network` service, it's core module code is located in `network._js`. `network._js` wouldn't be re-generated, so it is the place where new handwritten commands should be added. In our case, we create new categories structure in `network._js`:
 
 ```javascript
 // appGateway is 'application-gateway' category, it was already created
@@ -32,7 +33,7 @@ var disabledRuleGroups = webApplicationFirewallConfiguration.category('disabled-
   .description($('Commands to manage disabled rule groups'));
 ```
 
-Now we write our own command in `disabled-rule-groups` category. The following code is `create` command that adds new disabled rule group to `disabledRuleGroups` array in WAF config. It's options are resource group name and gateway name (you need them to get WAF Config itself), rule group name and comma-separated list of rule IDs. Most of this code can be copypasted from other commands.
+Now we write our own command in `disabled-rule-groups` category. The following code is `create` command that adds new disabled rule group to `disabledRuleGroups` array in WAF config. It's options are resource group name and gateway name (required to get application gateway that contains WAF Config itself), rule group name and comma-separated list of rule IDs. Most of this code can be copy-pasted from other commands.
 
 ```javascript
 disabledRuleGroups.command('create [resource-group] [gateway-name] [rule-group-name]')
@@ -67,7 +68,5 @@ wafConfig.disabledRuleGroups.push({
 // ...
 networkManagementClient.applicationGateways.createOrUpdate(resourceGroup, appGatewayName, result, _);
 ```
-
-Once again, some parts of this code you can see in auto generated commands.
 
 Operations `set`, `show`, `list` and `delete` can be written the same way.
