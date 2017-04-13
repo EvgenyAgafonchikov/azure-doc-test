@@ -1,8 +1,6 @@
 # Limitations of code generation & how to overcome them
 
-Unfortunately, generator can not generate code for processing of complex properties such as an array of objects. In that case developer has to extend auto generated code by adding handwritten code for processing of complex properties. Let's call this hybrid solution i.e. partially generated and partially handwritten. This manual explains how to write hybrid solution using Web Application Firewall Config as an example.
-
-*Please compete reading of [documentation](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/) (especially [the part about writing cmdlets](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/Writing-Cmd.md)) for `azure-xplat-cli` before continuing*
+Generator can not generate code for processing complex properties such as an array of objects. In that case developer has to extend auto generated code by adding handwritten code for such cases. Let's call this hybrid solution i.e. partially generated and partially handwritten. This manual explains how to write hybrid solution using Web Application Firewall Config as an example.
 
 ## Examining auto generated code
 
@@ -70,3 +68,7 @@ networkManagementClient.applicationGateways.createOrUpdate(resourceGroup, appGat
 ```
 
 Operations `set`, `show`, `list` and `delete` can be written the same way.
+
+*For additional information on developing custom commands please refer to [azure-xplat-cli documentation](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/) (especially [the part about writing cmdlets](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/Writing-Cmd.md))*
+
+*For additional information on extending CLI's codebase please refer to [azure-xplat-cli documentation](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/) (especially [the part about writing cmdlets](https://github.com/Azure/azure-xplat-cli/blob/dev/Documentation/Writing-Cmd.md))*
